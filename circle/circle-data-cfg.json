@@ -1,0 +1,5 @@
+{
+  "radius": [5.0, 10.0, 15.0],
+  "vertical_offset": [10.0, 20.0, 30.0],
+  "horizontal_offset": [10.0, 20.0, 30.0]
+}
