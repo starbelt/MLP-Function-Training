@@ -84,6 +84,20 @@ npy_to_cfg_dict = {}
 with open(os.path.join(src,'circle-npy-to-cfg.json'), 'r') as ifile:
   npy_to_cfg_dict = json.load(ifile)
 
+# --- load TRAIN cfg dict to compute normalization constants (must match training!) ---
+with open(os.path.join(src,'circle-npy-to-cfg.json'), 'r') as ifile:
+  trn_cfg_dict = json.load(ifile)
+
+R_MAX = max(trn_cfg_dict[k]['radius'] for k in trn_cfg_dict)
+V_OFF_MAX = max(trn_cfg_dict[k]['vertical_offset'] for k in trn_cfg_dict)
+H_OFF_MAX = max(trn_cfg_dict[k]['horizontal_offset'] for k in trn_cfg_dict)
+
+R_MAX = max(R_MAX, 1.0)
+V_OFF_MAX = max(V_OFF_MAX, 1.0)
+H_OFF_MAX = max(H_OFF_MAX, 1.0)
+
+XY_MAX = max(R_MAX + H_OFF_MAX, R_MAX + V_OFF_MAX, 1.0)
+
 # find max y value for consistent axis limits
 max_y = 0.0
 for k in npy_to_cfg_dict:
@@ -108,10 +122,27 @@ for npy in npys:
    npy_to_cfg_dict[circle_id]['horizontal_offset']
   ])
   nparr = np.load(os.path.join(src,npy))
-  inputs = torch.tensor(np.column_stack((\
-   np.repeat([data_cfg],repeats=nparr.shape[0],axis=0),nparr[:,0]\
-  )),dtype=torch.float32)
-  pred_out = mlp(inputs)
+
+  # columns: [x, y, theta]
+  x_true = nparr[:, 0] 
+  y_true = nparr[:, 1] 
+  sin_t = nparr[:, [2]]  # (N,1)
+  cos_t = nparr[:, [3]]  # (N,1)
+
+  r = data_cfg[0]
+  v = data_cfg[1]
+  h = data_cfg[2] 
+
+  cfg_norm = np.array([r / R_MAX, v / V_OFF_MAX, h / H_OFF_MAX], dtype=np.float32)
+  cfg_rep = np.repeat(cfg_norm[None, :], repeats=nparr.shape[0], axis=0)  # (N,3)
+
+  # inputs: [radius, vertical_offset, horizontal_offset, sin(theta), cos(theta)]
+  inputs_np = np.hstack([cfg_rep, sin_t, cos_t])  # (N,5)
+  inputs = torch.tensor(inputs_np, dtype=torch.float32)
+
+  with torch.no_grad():
+    pred_out = mlp(inputs)  # (N,2)
+
   plt_title = \
    'Radius: '+'{:.3f}'.format(npy_to_cfg_dict[circle_id]['radius'])+'; '+\
    'Vertical Offset: '+'{:.3f}'.format(npy_to_cfg_dict[circle_id]['vertical_offset'])+'; '+\
@@ -119,15 +150,20 @@ for npy in npys:
   plt_y_axis = 'Y Axis'
   plt_x_axis = 'X Axis'
   fig = plt.figure(layout='constrained')
+  
   plt.plot(\
-   nparr[:,0], nparr[:,1],\
+   x_true, y_true,
    marker='o', linestyle='None', label='Truth'\
   )
-  pred_np = pred_out.detach().cpu().numpy().squeeze()  # shape (N,)
+  pred_np = pred_out.cpu().numpy()  # (N,2)
+  x_pred = pred_np[:, 0] * XY_MAX
+  y_pred = pred_np[:, 1] * XY_MAX
+  
   plt.plot(
-   nparr[:,0], pred_np,
+   x_pred, y_pred,
    marker='.', linestyle='None', label='Predictions'
   )
+
   plt.axis("equal")
   plt.ylim(-max_y, 1.8*max_y)
   plt.xlim(-max_x, 1.1*max_x)
@@ -137,3 +173,10 @@ for npy in npys:
   plt.legend()
   plt.savefig(os.path.join(dst,'circle_'+circle_id+'.png'),format='png')
   plt.close(fig)
+
+def list_circles(split):
+  return sorted(f[:-4] for f in os.listdir(f"../05-split-data/{split}") if f.endswith(".npy"))
+
+print("Train circles:", list_circles("trn"))
+print("Val circles:  ", list_circles("val"))
+print("Test circles: ", list_circles("tst")) 

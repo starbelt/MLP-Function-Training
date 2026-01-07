@@ -71,11 +71,6 @@ for circle in circles:
    'horizontal_offset': h
   }
   
-  # determine the minimum x-axis window size for all circles to be complete
-  x_max = h + r
-
-  # determine the minimum y-axis window size for all circles to be complete
-  x_min = h - r
 
   '''
   # for each circle, write x_values
@@ -89,9 +84,10 @@ for circle in circles:
   '''
 
   theta = np.linspace(0, 2*np.pi, steps)
-  x_values_full = h + r*np.cos(theta)
-  y_values_full = v + r*np.sin(theta)
- 
+  sin_t = np.sin(theta)
+  cos_t = np.cos(theta)
+  x_values_full = h + r*cos_t
+  y_values_full = v + r*sin_t
   '''
   # combine positive and negative halves
   y_values_full = np.concatenate((y_pos, y_neg))
@@ -99,7 +95,7 @@ for circle in circles:
   '''
 
   # Generates circle data with x values, y values, and corresponding theta values
-  circle_out = np.column_stack((x_values_full, y_values_full, theta)) 
+  circle_out = np.column_stack((x_values_full, y_values_full, sin_t, cos_t)) 
   np.save(os.path.join(log, circle_id_str+'.npy'), circle_out)
   circle_id += 1
 

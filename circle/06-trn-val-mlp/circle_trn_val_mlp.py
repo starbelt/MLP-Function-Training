@@ -83,7 +83,7 @@ class MSDataset(Dataset):
 '''
 # New code for testing
 class MSDataset(Dataset):
-  def __init__(self, src_dir):
+  def __init__(self, src_dir, R_MAX, V_OFF_MAX, H_OFF_MAX, XY_MAX):
     with open(os.path.join(src_dir,'circle-npy-to-cfg.json'), 'r') as ifile:
       npy_to_cfg_dict = json.load(ifile)
 
@@ -94,20 +94,32 @@ class MSDataset(Dataset):
 
     for npy in npys:
       circle_id = npy[:-4]
-      data_cfg = np.array([
+      cfg = np.array([
         npy_to_cfg_dict[circle_id]['radius'],
         npy_to_cfg_dict[circle_id]['vertical_offset'],
         npy_to_cfg_dict[circle_id]['horizontal_offset']
-      ])
+      ], dtype=np.float32)
 
       nparr = np.load(os.path.join(src_dir, npy))
 
       
-      theta = nparr[:, [2]]
-      xy = nparr[:, [0,1]]
+      r_n = cfg[0] / R_MAX
+      v_n = cfg[1] / V_OFF_MAX
+      h_n = cfg[2] / H_OFF_MAX
 
-      cfg_rep = np.repeat(cfg[None, :], repeats=nparr.shape[0], axis=0)  # (N,3)
-      inputs_np = np.hstack([cfg_rep, theta])                            # (N,4) -> [r, v_off, h_off, theta]
+      cfg_norm = np.array([r_n, v_n, h_n], dtype=np.float32)
+
+      nparr = np.load(os.path.join(src_dir, npy)).astype(np.float32)
+
+      # Debugging print statement
+      #print(npy, nparr.shape)
+
+      sin_t = nparr[:, [2]]
+      cos_t = nparr[:, [3]]
+      xy = nparr[:, 0:2] / XY_MAX # normalize x and y
+      
+      cfg_rep = np.repeat(cfg_norm[None, :], repeats=nparr.shape[0], axis=0)  # (N,3)
+      inputs_np = np.hstack([cfg_rep, sin_t, cos_t])                            # (N,5) -> [r, v_off, h_off, sin(theta), cos(theta)]
 
       data_list.append(torch.tensor(inputs_np, dtype=torch.float32))
       label_list.append(torch.tensor(xy, dtype=torch.float32))
@@ -157,9 +169,23 @@ criterion = nn.MSELoss()
 # optimizer: adaptive moment estimation to automatically adjust learning rate
 optimizer = torch.optim.Adam(mlp.parameters(), lr=0.001)
 
+# Compute normalization constants ONCE from training config
+with open(os.path.join(src, 'trn', 'circle-npy-to-cfg.json'), 'r') as f:
+  trn_cfg_dict = json.load(f)
+
+R_MAX = max(trn_cfg_dict[k]['radius'] for k in trn_cfg_dict)
+V_OFF_MAX = max(trn_cfg_dict[k]['vertical_offset'] for k in trn_cfg_dict)
+H_OFF_MAX = max(trn_cfg_dict[k]['horizontal_offset'] for k in trn_cfg_dict)
+
+R_MAX = max(R_MAX, 1.0)
+V_OFF_MAX = max(V_OFF_MAX, 1.0)
+H_OFF_MAX = max(H_OFF_MAX, 1.0)
+
+XY_MAX = max(R_MAX + H_OFF_MAX, R_MAX + V_OFF_MAX, 1.0)
+
 # load datasets
-trn_dataset = MSDataset(src_dir=os.path.join(src,'trn'))
-val_dataset = MSDataset(src_dir=os.path.join(src,'val'))
+trn_dataset = MSDataset(os.path.join(src,'trn'), R_MAX, V_OFF_MAX, H_OFF_MAX, XY_MAX)
+val_dataset = MSDataset(os.path.join(src,'val'), R_MAX, V_OFF_MAX, H_OFF_MAX, XY_MAX)
 
 # construct data loaders
 worker_count = min(NUM_CPUS,16) # no need for more than 16 data loader workers

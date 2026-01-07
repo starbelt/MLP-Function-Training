@@ -96,22 +96,43 @@ class MSDataset(Dataset):
 
     for npy in npys:
       circle_id = npy[:-4]
-      data_cfg = np.array([
+      cfg = np.array([
         npy_to_cfg_dict[circle_id]['radius'],
         npy_to_cfg_dict[circle_id]['vertical_offset'],
         npy_to_cfg_dict[circle_id]['horizontal_offset']
       ])
 
+      R_MAX = max([npy_to_cfg_dict[k]['radius'] for k in npy_to_cfg_dict])
+      V_OFF_MAX = max([npy_to_cfg_dict[k]['vertical_offset'] for k in npy_to_cfg_dict])
+      H_OFF_MAX = max([npy_to_cfg_dict[k]['horizontal_offset'] for k in npy_to_cfg_dict])
+
+      X_MAX = max(R_MAX + H_OFF_MAX, 1.0)
+      Y_MAX = max(R_MAX + V_OFF_MAX, 1.0)
+
+      XY_MAX = max(X_MAX, Y_MAX)
+
+      R_MAX = max(R_MAX, 1.0)
+      V_OFF_MAX = max(V_OFF_MAX, 1.0)
+      H_OFF_MAX = max(H_OFF_MAX, 1.0)
+
+      r_n = cfg[0] / R_MAX
+      v_n = cfg[1] / V_OFF_MAX
+      h_n = cfg[2] / H_OFF_MAX
+
+      cfg_norm = np.array([r_n, v_n, h_n], dtype=np.float32)
+
       nparr = np.load(os.path.join(src_dir, npy))
 
-      x = np.column_stack((
-        np.repeat([data_cfg], repeats=nparr.shape[0], axis=0),
-        nparr[:, 0]
-      ))
-      y = nparr[:, [1]]
+      sin_t = nparr[:, [2]]
+      cos_t = nparr[:, [3]]
 
-      data_list.append(torch.tensor(x, dtype=torch.float32))
-      label_list.append(torch.tensor(y, dtype=torch.float32))
+      xy = nparr[:, 0:2] / XY_MAX  # normalize x and y
+
+      cfg_rep = np.repeat(cfg_norm[None, :], repeats=nparr.shape[0], axis=0)  # (N,3)
+      inputs_np = np.hstack([cfg_rep, sin_t, cos_t])                     # (N,5) -> [r, v_off, h_off, sin(theta), cos(theta)]
+
+      data_list.append(torch.tensor(inputs_np, dtype=torch.float32))
+      label_list.append(torch.tensor(xy, dtype=torch.float32))
 
     self.data = torch.cat(data_list, dim=0)
     self.labels = torch.cat(label_list, dim=0)

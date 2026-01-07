@@ -1,5 +1,5 @@
 {
-  "in_features": 4,
+  "in_features": 5,
   "layers": [
     {"class": "Linear", "out_features": 256},
     {"class": "ReLU"},
