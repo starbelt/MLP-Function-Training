@@ -84,7 +84,7 @@ class MSDataset(Dataset):
 # New code for testing
 class MSDataset(Dataset):
   def __init__(self, src_dir, R_MAX, V_OFF_MAX, H_OFF_MAX, XY_MAX):
-    with open(os.path.join(src_dir,'circle-npy-to-cfg.json'), 'r') as ifile:
+    with open(os.path.join(src_dir,'npy-to-cfg.json'), 'r') as ifile:
       npy_to_cfg_dict = json.load(ifile)
 
     npys = [f for f in os.listdir(src_dir) if f.endswith('.npy')]
@@ -170,7 +170,7 @@ criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(mlp.parameters(), lr=0.001)
 
 # Compute normalization constants ONCE from training config
-with open(os.path.join(src, 'trn', 'circle-npy-to-cfg.json'), 'r') as f:
+with open(os.path.join(src, 'trn', 'npy-to-cfg.json'), 'r') as f:
   trn_cfg_dict = json.load(f)
 
 R_MAX = max(trn_cfg_dict[k]['radius'] for k in trn_cfg_dict)

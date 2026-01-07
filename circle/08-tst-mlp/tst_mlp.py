@@ -86,7 +86,7 @@ class MSDataset(Dataset):
 
 class MSDataset(Dataset):
   def __init__(self, src_dir):
-    with open(os.path.join(src_dir,'circle-npy-to-cfg.json'), 'r') as ifile:
+    with open(os.path.join(src_dir,'npy-to-cfg.json'), 'r') as ifile:
       npy_to_cfg_dict = json.load(ifile)
 
     npys = sorted([f for f in os.listdir(src_dir) if f.endswith('.npy')])

@@ -107,7 +107,7 @@ os.makedirs(dst_tst, exist_ok=True)
 
 # Copy config files
 for d in [dst_trn, dst_val, dst_tst]:
-    shutil.copy(os.path.join(src, "circle-npy-to-cfg.json"), d)
+    shutil.copy(os.path.join(src, "npy-to-cfg.json"), d)
 
 # Collect circle files
 npys = sorted([f for f in os.listdir(src) if f.endswith(".npy")])

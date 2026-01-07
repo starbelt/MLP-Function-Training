@@ -171,7 +171,7 @@ for npy in npys:
   plt.ylabel(plt_y_axis)
   plt.xlabel(plt_x_axis)
   plt.legend()
-  plt.savefig(os.path.join(dst,'circle_'+circle_id+'.png'),format='png')
+  plt.savefig(os.path.join(dst,circle_id+'.png'),format='png')
   plt.close(fig)
 
 def list_circles(split):

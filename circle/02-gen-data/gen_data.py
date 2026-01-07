@@ -100,5 +100,5 @@ for circle in circles:
   circle_id += 1
 
 # write a JSON configuration key
-with open(os.path.join(log,'circle-npy-to-cfg.json'), 'w') as ofile:
+with open(os.path.join(log,'npy-to-cfg.json'), 'w') as ofile:
   json.dump(id_to_cfg, ofile)
