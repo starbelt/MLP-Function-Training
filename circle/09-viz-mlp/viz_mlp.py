@@ -177,6 +177,9 @@ for npy in npys:
 def list_circles(split):
   return sorted(f[:-4] for f in os.listdir(f"../05-split-data/{split}") if f.endswith(".npy"))
 
+# print summary of circles in each split (only works if ../05-split-data/ is splitting individual circles into types)
+'''
 print("Train circles:", list_circles("trn"))
 print("Val circles:  ", list_circles("val"))
 print("Test circles: ", list_circles("tst")) 
+'''

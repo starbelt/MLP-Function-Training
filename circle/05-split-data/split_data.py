@@ -16,7 +16,7 @@ import shutil      # file copy
 import sys         # argv
 
 # "constants"
-'''
+
 ## train, validate, and test split (must add to 1.0)
 TRN_FRAC = 0.6
 VAL_FRAC = 0.2
@@ -82,6 +82,8 @@ for npy in npys:
   np.save(os.path.join(dst_tst,npy),tst_arr)
   # update seed
   seed_i = seed_i+1
+
+# Code to split entire circles rather than samples within circles  
 '''
 TRN_FRAC = 0.6
 VAL_FRAC = 0.2
@@ -135,3 +137,4 @@ print("Split summary:")
 print("  Train circles:", len(trn_files))
 print("  Val circles:  ", len(val_files))
 print("  Test circles: ", len(tst_files))
+'''
