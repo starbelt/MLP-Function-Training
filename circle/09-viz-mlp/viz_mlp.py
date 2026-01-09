@@ -105,6 +105,7 @@ for k in npy_to_cfg_dict:
   k_v = npy_to_cfg_dict[k]['vertical_offset']
   if k_r + k_v > max_y:
     max_y = k_r + k_v
+print("Max Y for plots:", max_y)
 # find max x value for consistent axis limits
 max_x = 0.0
 for k in npy_to_cfg_dict:
@@ -112,6 +113,7 @@ for k in npy_to_cfg_dict:
   k_h = npy_to_cfg_dict[k]['horizontal_offset']
   if k_r + k_h > max_x:
     max_x = k_r + k_h
+print("Max Y for plots:", max_y)
 
 # load data and write plot PNGs
 for npy in npys:
@@ -164,12 +166,13 @@ for npy in npys:
    marker='.', linestyle='None', label='Predictions'
   )
 
-  plt.axis("equal")
-  plt.ylim(-max_y, 1.8*max_y)
-  plt.xlim(-max_x, 1.1*max_x)
+  #plt.axis("equal")
+  plt.ylim(-0.25*max_y, 1.1*max_y)
+  plt.xlim(-0.25*max_x, 1.1*max_x)
   plt.title(plt_title)
   plt.ylabel(plt_y_axis)
   plt.xlabel(plt_x_axis)
+  plt.gca().set_aspect('equal', adjustable='box')
   plt.legend()
   plt.savefig(os.path.join(dst,circle_id+'.png'),format='png')
   plt.close(fig)
