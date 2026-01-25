@@ -51,15 +51,16 @@ src = '' # a directory containing NPY files
 dst = '' # a directory for writing PNG files
 
 # parse script arguments
-if len(sys.argv)==5:
+if len(sys.argv)==6:
   cfg = sys.argv[1]
   pth = sys.argv[2]
-  src = sys.argv[3]
-  dst = sys.argv[4]
+  norm_pth = sys.argv[3]
+  src = sys.argv[4]
+  dst = sys.argv[5]
 else:
   print(\
    'Usage: '\
-   'python3 viz_mlp.py /path/to/mlp-cfg.json /path/to/mlp.pt /path/to/src/ /path/to/dst/'\
+   'python3 viz_mlp.py /path/to/mlp-cfg.json /path/to/mlp.pt /path/to/mlp-norm.pt /path/to/src/ /path/to/dst/'\
   )
   exit()
 
@@ -75,6 +76,13 @@ mlp = mlp_from_json(json_dict)
 state_dict = torch.load(pth)
 mlp.load_state_dict(state_dict)
 mlp.eval()
+
+# load normalization stats
+norm = torch.load(norm_pth, map_location='cpu')
+t_mean = norm["t_mean"]   # shape (10,)
+t_std  = norm["t_std"]    # shape (10,)
+v_mean = norm["v_mean"]   # shape (1,)
+v_std  = norm["v_std"]    # shape (1,)
 
 # collect NPY file paths
 npys = [f for f in os.listdir(src) if f.endswith('.npy')]
@@ -102,14 +110,21 @@ for npy in npys:
   inputs = torch.tensor(np.column_stack((\
    np.repeat([data_cfg],repeats=nparr.shape[0],axis=0),nparr[:,0]\
   )),dtype=torch.float32)
-  pred_out = mlp(inputs)
+
+  inputs_norm = (inputs - t_mean) / t_std
+
+  arr = np.load(f"../05-split-data/trn/{npy}")
+
+  time_trn = arr[:, 0]
+  voltage_trn = arr[:, 1]
 
   # Test section: Not in original code
 
   with torch.no_grad():
-    pred_out = mlp(inputs)
+    pred_norm = mlp(inputs_norm)
 
-  pred_np = pred_out.cpu().numpy().squeeze()   # (N,)
+  pred_volts = pred_norm * v_std + v_mean
+  pred_np = pred_volts.cpu().numpy().squeeze()   # (N,)
   true_np = nparr[:, 1]                        # (N,)
 
   mse = np.mean((pred_np - true_np) ** 2)
@@ -125,12 +140,14 @@ for npy in npys:
    'Power: '+'{:.3f}'.format(npy_to_cfg_dict[cap_id]['power'])
   plt_y_axis = 'Voltage (V)'
   plt_x_axis = 'Time (s)'
+
+# Assign colors point-by-point
   fig = plt.figure(layout='constrained')
   plt.plot(\
    nparr[:,0], nparr[:,1],\
    marker='o', linestyle='None', label='Truth'\
   )
-  pred_np = pred_out.detach().cpu().numpy().squeeze()  # shape (N,)
+  #pred_np = pred_out.detach().cpu().numpy().squeeze()  # shape (N,)
   plt.plot(
    nparr[:,0], pred_np,
    marker='.', linestyle='None', label='Predictions'
@@ -141,6 +158,10 @@ for npy in npys:
    marker='.', linestyle='None', label='Predictions'\
   )
   '''
+  plt.plot(\
+   time_trn, voltage_trn,\
+   marker=',', linestyle='None', label='Training Points'\
+  )
   plt.title(plt_title)
   plt.ylabel(plt_y_axis)
   plt.xlabel(plt_x_axis)

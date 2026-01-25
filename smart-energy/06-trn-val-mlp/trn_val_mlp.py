@@ -47,6 +47,13 @@ def mlp_from_json(json_dict):
       exit()
   return nn.Sequential(*layers)
 
+## computes mean and stddev of a tensor along dimension 0 (not original code)
+def compute_mean_std(tensor, eps=1e-8):
+  mean = tensor.mean(dim=0)
+  std  = tensor.std(dim=0)
+  std = torch.clamp(std, min=eps)
+  return mean, std
+
 # helper classes (original code kept for reference)
 '''
 ## custom dataset
@@ -84,7 +91,8 @@ class MSDataset(Dataset):
 '''
 # New code for testing
 class MSDataset(Dataset):
-  def __init__(self, src_dir):
+  def __init__(self, src_dir, t_mean=None, t_std=None,
+               v_mean=None, v_std=None):
     with open(os.path.join(src_dir,'npy-to-cfg.json'), 'r') as ifile:
       npy_to_cfg_dict = json.load(ifile)
 
@@ -114,8 +122,6 @@ class MSDataset(Dataset):
         nparr[:, 0]
       ))
       v = nparr[:, [1]]
-      v_max = max(v)
-      v_normalized = v / v_max if v_max != 0 else v
 
       data_list.append(torch.tensor(t, dtype=torch.float32))
       label_list.append(torch.tensor(v, dtype=torch.float32))
@@ -124,11 +130,28 @@ class MSDataset(Dataset):
     self.data = torch.cat(data_list, dim=0)
     self.labels = torch.cat(label_list, dim=0)
 
+    # normalization code (not in original)
+    self.t_mean = t_mean
+    self.t_std = t_std
+    self.v_mean = v_mean
+    self.v_std = v_std
+
+
   def __len__(self):
     return self.data.shape[0]
 
   def __getitem__(self, idx):
-    return self.data[idx], self.labels[idx]
+
+    # normalization code (not in original)
+    t = self.data[idx]
+    v = self.labels[idx]
+
+    if self.t_mean is not None:
+      t = (t - self.t_mean) / self.t_std
+    if self.v_mean is not None:
+      v = (v - self.v_mean) / self.v_std
+
+    return t, v
 # End of new code 
 
 # initialize script arguments
@@ -168,8 +191,19 @@ criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(mlp.parameters(), lr=0.001)
 
 # load datasets
-trn_dataset = MSDataset(src_dir=os.path.join(src,'trn'))
-val_dataset = MSDataset(src_dir=os.path.join(src,'val'))
+trn_dataset_raw = MSDataset(src_dir=os.path.join(src,'trn'))
+#val_dataset_raw = MSDataset(src_dir=os.path.join(src,'val'))
+
+t_mean, t_std = compute_mean_std(trn_dataset_raw.data)
+v_mean, v_std = compute_mean_std(trn_dataset_raw.labels)
+
+trn_dataset = MSDataset(src_dir=os.path.join(src,'trn'),
+                        t_mean=t_mean, t_std=t_std,
+                        v_mean=v_mean, v_std=v_std)
+
+val_dataset = MSDataset(src_dir=os.path.join(src,'val'),
+                        t_mean=t_mean, t_std=t_std,
+                        v_mean=v_mean, v_std=v_std)
 
 # construct data loaders
 worker_count = min(NUM_CPUS,16) # no need for more than 16 data loader workers
@@ -220,14 +254,23 @@ with open(os.path.join(dst,mlp_id+'-losses.csv'),mode='w',newline='') as ofile:
 # save model file
 torch.save(mlp.state_dict(), os.path.join(dst,mlp_id+'.pt'))
 
+torch.save({
+  "t_mean": t_mean,
+  "t_std": t_std,
+  "v_mean": v_mean,
+  "v_std": v_std
+}, os.path.join(dst, mlp_id + "-norm.pt"))
+
 t_end_total = time.perf_counter()
 total_time_s = t_end_total - t_start_total
 
 runtime_csv = os.path.join(dst, mlp_id + '-runtime.csv')
-final_val_mse = losses[-1][2] 
+mse_norm = losses[-1][2] 
+mse_volts2 = mse_norm * float(v_std.item() ** 2) 
+rmse_volts = (mse_norm ** 0.5) * float(v_std.item())
 
 with open(runtime_csv, mode='w', newline='') as ofile:
     writer = csv.writer(ofile)
     writer.writerow(['metric', 'seconds'])
     writer.writerow(['total_execution_time', f'{total_time_s:.6f}'])
-    writer.writerow(['final_val_mse', f'{final_val_mse:.9f}'])
+    writer.writerow(['final_val_rmse', f'{rmse_volts:.9f}'])

@@ -28,7 +28,6 @@ P = 6 #index for power
 VHI = 7 # index for high voltage
 VLO = 8 # index for low voltage
 IRR_W_P_M2 = 1366.1
-TRUTH_DT_S = 0.1
 
 
 # helper functions
@@ -47,9 +46,7 @@ def run_truth(params):
     sa_m2=params["sa_m2"]; eff=params["eff"]; vmp=params["vmp"]
     c_f=params["c_f"]; esr_ohm=params["esr_ohm"]; q0_c=params["q0_c"]
     p_on_w=params["p_on_w"]; vhi=params["vhi"]; vlo=params["vlo"]
-    dur_s=params["dur_s"]
-
-    dt_s = TRUTH_DT_S
+    dur_s=params["dur_s"]; dt_s = params["dt_s"]
 
     # initial values 
     t_s   = 0.0
@@ -151,8 +148,22 @@ with open(json_file, "w") as f:
 
 
 # determine zfill padding
-n = 28  # number of rows / cases
+#n = len(data["sa_m2"])  # number of rows / cases
+n = 80  # number of rows / cases
+dt_s_avg = 0.01 #mean time step to secure the same number of points.
 pad = max(1, math.floor(math.log10(n)) + 1)
+
+for k in meta:
+    meta[k] = meta[k][:n]
+
+max_dur_s = max(meta["dur_s"])
+max_points = int(max_dur_s/dt_s_avg)
+print(max_points)
+
+# Ensures the same number of points per data set
+for i in range(len(meta["dt_s"])):
+    meta["dt_s"][i] = meta["dur_s"][i]/max_points
+    print(meta["dur_s"][i]/meta["dt_s"][i])
 
 # for each wave, write out a dataset 
 id_to_cfg = {}
@@ -205,6 +216,7 @@ for cap_id in range(n):
    'vhi': vhi,
    'vlo': vlo,
    'dur_s': meta["dur_s"][cap_id],
+   'dt_s': meta["dt_s"][cap_id]
   }
 
   cap_out = np.array(run_truth(params), dtype=float)

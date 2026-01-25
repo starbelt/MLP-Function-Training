@@ -94,11 +94,12 @@ src = '' # a directory containing the tst/ directory
 dst = '' # a directory to write the performance statistics
 
 # parse script arguments
-if len(sys.argv)==5:
+if len(sys.argv)==6:
   cfg = sys.argv[1]
   pth = sys.argv[2]
-  src = sys.argv[3]
-  dst = sys.argv[4]
+  norm_pth = sys.argv[3]
+  src = sys.argv[4]
+  dst = sys.argv[5]
 else:
   print(\
    'Usage: '\
@@ -122,6 +123,12 @@ state_dict = torch.load(pth)
 mlp.load_state_dict(state_dict)
 mlp.eval()
 
+norm = torch.load(norm_pth, map_location='cpu')
+t_mean = norm["t_mean"]
+t_std  = norm["t_std"]
+v_mean = norm["v_mean"]
+v_std  = norm["v_std"]
+
 # criterion: use a regression loss function, specifically MSE
 criterion = nn.MSELoss()
 
@@ -136,16 +143,21 @@ tst_loader = DataLoader(\
 tst_loss = 0.0
 with torch.no_grad():
   for inputs, true_out in tqdm(tst_loader, desc='Evaluating on test data'):
-    pred_out = mlp(inputs)
-    loss = criterion(pred_out, true_out)
+    inputs_norm = (inputs - t_mean) / t_std
+    true_norm   = (true_out - v_mean) / v_std
+
+    pred_norm = mlp(inputs_norm)
+    loss = criterion(pred_norm, true_norm)
     tst_loss += loss.item()
 
 # print MSE for test dataset
-mse = tst_loss/len(tst_loader)
-print('Test loss (MSE): {:.12f}'.format(mse))
+mse_norm = tst_loss / len(tst_loader)
+rmse_volts = (mse_norm ** 0.5) * float(v_std.item())
+
+print(f"Test RMSE: {rmse_volts:.6f} V")
 
 # write MSE to CSV file
 with open(os.path.join(dst,mlp_id+'-tstmse.csv'),mode='w',newline='') as ofile:
   csvwriter = csv.writer(ofile)
   csvwriter.writerow(['MSE'])
-  csvwriter.writerow(['{:.12f}'.format(mse)])
+  csvwriter.writerow(['{:.12f}'.format(mse_norm)])

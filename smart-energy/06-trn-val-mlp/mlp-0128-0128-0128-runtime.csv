@@ -1,3 +1,3 @@
 metric,seconds
-total_execution_time,301.992058
-final_val_mse,0.049531440
+total_execution_time,401.634222
+final_val_rmse,0.037350994
