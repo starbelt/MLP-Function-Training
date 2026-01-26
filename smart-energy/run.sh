@@ -16,7 +16,6 @@ SPLIT="$SCRIPT_DIR/05-split-data/"
 # Activate the virtual environment
 source "$SCRIPT_DIR/p3-env/bin/activate"
 
-: <<"comment"
 # ---- optional training pipeline (as you had it) ----
 rm -rf "$SCRIPT_DIR/03-data/"*
 rm -f  "$SCRIPT_DIR/02-gen-data/data-cfg.json"
@@ -25,6 +24,7 @@ python3 "$SCRIPT_DIR/02-gen-data/gen_data.py" "$SCRIPT_DIR/02-gen-data/test.csv"
 rm -rf "$SCRIPT_DIR/05-split-data/trn"* "$SCRIPT_DIR/05-split-data/tst"* "$SCRIPT_DIR/05-split-data/val"*
 python3 "$SCRIPT_DIR/05-split-data/split_data.py" "$SCRIPT_DIR/03-data/" "$SCRIPT_DIR/05-split-data/"
 
+
 for cfg_dir in "$BASE_DIR_TRN"/mlp-*-cfg/; do
   echo "=== Training folder: $cfg_dir ==="
   for cfg in "$cfg_dir"/mlp-*-*.json; do
@@ -32,7 +32,7 @@ for cfg_dir in "$BASE_DIR_TRN"/mlp-*-cfg/; do
     python3 "$SCRIPT_TRN" "$cfg" "$SPLIT" "$BASE_DIR_TRN"
   done
 done
-comment
+
 
 # ---- testing loop (NEW, matches your required call) ----
 # ---- testing loop (FIXED) ----
@@ -43,7 +43,7 @@ SRC_DIR="$SCRIPT_DIR/05-split-data"   # must contain tst/ inside it
 
 cfg_dirs=( "$BASE_DIR_TRN"/mlp-*-cfg/ )
 if [[ ${#cfg_dirs[@]} -eq 0 ]]; then
-  echo "❌ No cfg dirs found at: $BASE_DIR_TRN/mlp-*-cfg/"
+  echo "No cfg dirs found at: $BASE_DIR_TRN/mlp-*-cfg/"
   exit 1
 fi
 
@@ -66,10 +66,10 @@ for cfg_dir in "${cfg_dirs[@]}"; do
     # Put ALL outputs directly into 08-tst-mlp/
     dst="$BASE_DIR_TST"
 
-    [[ -f "$cfg" ]]        || { echo "❌ Missing cfg: $cfg"; exit 1; }
-    [[ -f "$model_pt" ]]   || { echo "❌ Missing model: $model_pt"; exit 1; }
-    [[ -f "$norm_pt" ]]    || { echo "❌ Missing norm: $norm_pt"; exit 1; }
-    [[ -d "$SRC_DIR/tst" ]]|| { echo "❌ Missing test dir: $SRC_DIR/tst"; exit 1; }
+    [[ -f "$cfg" ]]        || { echo "Missing cfg: $cfg"; exit 1; }
+    [[ -f "$model_pt" ]]   || { echo "Missing model: $model_pt"; exit 1; }
+    [[ -f "$norm_pt" ]]    || { echo "Missing norm: $norm_pt"; exit 1; }
+    [[ -d "$SRC_DIR/tst" ]]|| { echo "Missing test dir: $SRC_DIR/tst"; exit 1; }
 
     echo "▶ Testing: $stem"
     python3 "$SCRIPT_TST" "$cfg" "$model_pt" "$norm_pt" "$SRC_DIR" "$dst"
@@ -77,5 +77,30 @@ for cfg_dir in "${cfg_dirs[@]}"; do
 done
 
 
+# ---- visualization loop ----
+VIZ_SCRIPT="$SCRIPT_DIR/07-viz-trn-val/viz_trn_val.py"
+VIZ_DST="$SCRIPT_DIR/07-viz-trn-val"
+BASE_DIR_TRN="$SCRIPT_DIR/06-trn-val-mlp"
+
+mkdir -p "$VIZ_DST"
+
+run_dirs=( "$BASE_DIR_TRN"/mlp-*-*-*-* )
+if [[ ${#run_dirs[@]} -eq 0 ]]; then
+  echo "No training run dirs found in $BASE_DIR_TRN"
+  exit 1
+fi
+
+for run_dir in "${run_dirs[@]}"; do
+  losses=( "$run_dir"/*-losses.csv )
+  if [[ ${#losses[@]} -eq 0 ]]; then
+    echo "No losses CSV in $run_dir"
+    continue
+  fi
+
+  for csv in "${losses[@]}"; do
+    echo "Visualizing: $csv"
+    python3 "$VIZ_SCRIPT" "$csv" "$VIZ_DST"
+  done
+done
 
 deactivate

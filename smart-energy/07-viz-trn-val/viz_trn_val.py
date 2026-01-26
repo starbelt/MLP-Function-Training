@@ -37,6 +37,10 @@ else:
   )
   exit()
 
+csv_base = os.path.basename(src)
+csv_stem = os.path.splitext(csv_base)[0]
+mlp_id = csv_stem.replace('-losses', '')
+
 # read data from CSV file
 csv_data = [[],[],[]]
 with open(src, mode='r', newline='') as ifile:
@@ -48,7 +52,7 @@ with open(src, mode='r', newline='') as ifile:
     csv_data[VAL_IDX].append(float(row[2]))
 
 # plot csv data
-plt_title = 'Training and validation loss by epoch'
+plt_title = f'Training and validation loss by epoch\n{mlp_id}'
 plt_y_axis = 'Loss'
 plt_x_axis = 'Epoch'
 fig = plt.figure(layout='constrained')
@@ -64,5 +68,5 @@ plt.title(plt_title)
 plt.ylabel(plt_y_axis)
 plt.xlabel(plt_x_axis)
 plt.legend()
-plt.savefig(os.path.join(dst,'viz-loss.pdf'),format='pdf')
+plt.savefig(os.path.join(dst, f'viz-loss-{mlp_id}.pdf'), format='pdf')
 plt.close(fig)

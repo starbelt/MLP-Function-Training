@@ -24,7 +24,7 @@ from datetime import datetime
 import time
 
 # "constants"
-EPOCHS = 1
+EPOCHS = 50
 NUM_CPUS = os.cpu_count()
 
 # helper functions
@@ -258,7 +258,7 @@ os.makedirs(run_dir, exist_ok=True)
 print(run_dir)
 
 # write losses to CSV file
-with open(os.path.join(run_dir, f"{mlp_id}-losses"),mode='w',newline='') as ofile:
+with open(os.path.join(run_dir, f"{mlp_id}-losses.csv"),mode='w',newline='') as ofile:
   csvwriter = csv.writer(ofile)
   csvwriter.writerow(losses[0])
   for row in losses[1:]:
