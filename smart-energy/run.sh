@@ -25,12 +25,28 @@ rm -rf "$SCRIPT_DIR/05-split-data/trn"* "$SCRIPT_DIR/05-split-data/tst"* "$SCRIP
 python3 "$SCRIPT_DIR/05-split-data/split_data.py" "$SCRIPT_DIR/03-data/" "$SCRIPT_DIR/05-split-data/"
 
 
-for cfg_dir in "$BASE_DIR_TRN"/mlp-*-cfg/; do
-  echo "=== Training folder: $cfg_dir ==="
-  for cfg in "$cfg_dir"/mlp-*-*.json; do
-    echo "-> Training config: $cfg"
-    python3 "$SCRIPT_TRN" "$cfg" "$SPLIT" "$BASE_DIR_TRN"
-  done
+echo "Available config folders:"
+select CFG_DIR in "$BASE_DIR_TRN"/mlp-*-cfg/; do
+  if [[ -n "$CFG_DIR" ]]; then
+    echo "Selected folder: $CFG_DIR"
+    break
+  else
+    echo "Invalid selection, try again."
+  fi
+done
+
+MAX_RUNS=6
+count=0
+
+for cfg in "$CFG_DIR"/mlp-*-*.json; do
+  echo "-> Training config: $cfg"
+  python3 "$SCRIPT_TRN" "$cfg" "$SPLIT" "$BASE_DIR_TRN"
+
+  ((count++))
+  if (( count >= MAX_RUNS )); then
+    echo "Reached limit of $MAX_RUNS configs. Stopping."
+    break
+  fi
 done
 
 
@@ -52,7 +68,7 @@ for cfg_dir in "${cfg_dirs[@]}"; do
 
   cfgs=( "$cfg_dir"/mlp-*-*.json )
   if [[ ${#cfgs[@]} -eq 0 ]]; then
-    echo "⚠️  No json configs in: $cfg_dir"
+    echo "No json configs in: $cfg_dir"
     continue
   fi
 
