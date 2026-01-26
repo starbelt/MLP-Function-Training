@@ -127,6 +127,9 @@ for npy in npys:
   pred_np = pred_volts.cpu().numpy().squeeze()   # (N,)
   true_np = nparr[:, 1]                        # (N,)
 
+  time_pred = nparr[:, 0]
+  is_training_time = np.isin(time_pred, time_trn)
+
   mse = np.mean((pred_np - true_np) ** 2)
   mae = np.mean(np.abs(pred_np - true_np))
   max_err = np.max(np.abs(pred_np - true_np))
@@ -148,19 +151,15 @@ for npy in npys:
    marker='o', linestyle='None', label='Truth'\
   )
   #pred_np = pred_out.detach().cpu().numpy().squeeze()  # shape (N,)
+  
   plt.plot(
    nparr[:,0], pred_np,
    marker='.', linestyle='None', label='Predictions'
   )
-  '''
-  plt.plot(\
-   nparr[:,0], nparr[:,1],\
-   marker='.', linestyle='None', label='Predictions'\
-  )
-  '''
-  plt.plot(\
-   time_trn, voltage_trn,\
-   marker=',', linestyle='None', label='Training Points'\
+
+  plt.plot(
+   time_trn, voltage_trn,
+   marker=',', linestyle='None', label='Training Points'
   )
   plt.title(plt_title)
   plt.ylabel(plt_y_axis)

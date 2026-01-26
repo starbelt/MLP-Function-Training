@@ -45,6 +45,10 @@ dst_trn = os.path.join(dst,'trn')
 dst_val = os.path.join(dst,'val')
 dst_tst = os.path.join(dst,'tst')
 
+os.makedirs(dst_trn, exist_ok=True)
+os.makedirs(dst_val, exist_ok=True)
+os.makedirs(dst_tst, exist_ok=True)
+
 # copy the npy-to-cfg key to trn, val, and tst
 shutil.copy(os.path.join(src,'npy-to-cfg.json'), dst_trn)
 shutil.copy(os.path.join(src,'npy-to-cfg.json'), dst_val)

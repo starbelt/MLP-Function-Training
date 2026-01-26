@@ -142,6 +142,7 @@ with open(cfg, newline = "") as ifile:
         data.setdefault(key, []).append(float(value))
 
 json_file = "data-cfg.json"
+json_file = os.path.join("02-gen-data", "data-cfg.json")
 
 with open(json_file, "w") as f:
     json.dump(data, f, indent=2)
@@ -149,8 +150,8 @@ with open(json_file, "w") as f:
 
 # determine zfill padding
 #n = len(data["sa_m2"])  # number of rows / cases
-n = 80  # number of rows / cases
-dt_s_avg = 0.01 #mean time step to secure the same number of points.
+n = 2  # number of rows / cases
+dt_s_avg = 0.1 #mean time step to secure the same number of points.
 pad = max(1, math.floor(math.log10(n)) + 1)
 
 for k in meta:

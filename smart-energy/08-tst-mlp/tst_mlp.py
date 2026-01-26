@@ -17,10 +17,12 @@ import json           # json
 import numpy as np    # numpy
 import os             # listdir
 import sys            # argv
+import time
 import torch          # PyTorch
 import torch.nn as nn # Sequential, Linear, ReLU
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
+from datetime import datetime
 
 # "constants"
 NUM_CPUS = os.cpu_count()
@@ -47,6 +49,13 @@ def mlp_from_json(json_dict):
   return nn.Sequential(*layers)
 
 # helper classes
+def count_hidden_layers(json_dict):
+    num_linear = sum(
+        1 for layer in json_dict['layers']
+        if layer['class'] == 'Linear'
+    )
+    # assume last Linear is output layer
+    return max(0, num_linear - 1)
 
 ## custom dataset
 class MSDataset(Dataset):
@@ -132,6 +141,9 @@ v_std  = norm["v_std"]
 # criterion: use a regression loss function, specifically MSE
 criterion = nn.MSELoss()
 
+total_inference_time = 0.0
+total_predictions = 0
+
 # load test dataset and construct test data loader
 tst_dataset = MSDataset(src_dir=os.path.join(src,'tst'))
 worker_count = min(NUM_CPUS,16) # no need for more than 16 data loader workers
@@ -146,7 +158,14 @@ with torch.no_grad():
     inputs_norm = (inputs - t_mean) / t_std
     true_norm   = (true_out - v_mean) / v_std
 
+    start = time.perf_counter()
     pred_norm = mlp(inputs_norm)
+    end = time.perf_counter()
+
+    batch_time = end - start
+    total_inference_time += batch_time
+    total_predictions += inputs.shape[0]
+    
     loss = criterion(pred_norm, true_norm)
     tst_loss += loss.item()
 
@@ -156,8 +175,16 @@ rmse_volts = (mse_norm ** 0.5) * float(v_std.item())
 
 print(f"Test RMSE: {rmse_volts:.6f} V")
 
+time_per_prediction = total_inference_time / total_predictions
+print(f"Avg inference time per prediction: {time_per_prediction*1e6:.3f} µs")
+
+n_hidden = count_hidden_layers(json_dict)
+
 # write MSE to CSV file
-with open(os.path.join(dst,mlp_id+'-tstmse.csv'),mode='w',newline='') as ofile:
+with open(os.path.join(dst,f"{mlp_id}-tstmse.csv"),mode='w',newline='') as ofile:
   csvwriter = csv.writer(ofile)
-  csvwriter.writerow(['MSE'])
-  csvwriter.writerow(['{:.12f}'.format(mse_norm)])
+  csvwriter.writerow(['metric', 'value'])
+  csvwriter.writerow(['mse_norm', f'{mse_norm:.12f}'])
+  csvwriter.writerow(['rmse_volts', f'{rmse_volts:.6f}'])
+  csvwriter.writerow(['time_per_prediction_sec', f'{time_per_prediction:.12e}'])
+

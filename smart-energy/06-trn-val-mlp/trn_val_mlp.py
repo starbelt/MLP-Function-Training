@@ -20,10 +20,11 @@ import torch          # PyTorch
 import torch.nn as nn # Sequential, Linear, ReLU
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
+from datetime import datetime
 import time
 
 # "constants"
-EPOCHS = 100
+EPOCHS = 1
 NUM_CPUS = os.cpu_count()
 
 # helper functions
@@ -46,6 +47,14 @@ def mlp_from_json(json_dict):
       print('  Exiting')
       exit()
   return nn.Sequential(*layers)
+
+def count_hidden_layers(json_dict):
+    num_linear = sum(
+        1 for layer in json_dict['layers']
+        if layer['class'] == 'Linear'
+    )
+    # assume last Linear is output layer
+    return max(0, num_linear - 1)
 
 ## computes mean and stddev of a tensor along dimension 0 (not original code)
 def compute_mean_std(tensor, eps=1e-8):
@@ -180,6 +189,7 @@ with open(cfg, 'r') as ifile:
 
 # get MLP cfg file name
 mlp_id = os.path.splitext(os.path.basename(cfg))[0]
+#print(mlp_id)
 
 # create specified MLP model
 mlp = mlp_from_json(json_dict)
@@ -242,8 +252,13 @@ for i in tqdm(range(0,EPOCHS), desc='Performing trn and val epochs'):
   #print('  Trn loss: {:.6f}'.format(trn_losses[-1][1]))
   #print('  Val loss: {:.6f}'.format(val_losses[-1][1]))
 
+
+run_dir = os.path.join(dst, f"{mlp_id}")
+os.makedirs(run_dir, exist_ok=True)
+print(run_dir)
+
 # write losses to CSV file
-with open(os.path.join(dst,mlp_id+'-losses.csv'),mode='w',newline='') as ofile:
+with open(os.path.join(run_dir, f"{mlp_id}-losses"),mode='w',newline='') as ofile:
   csvwriter = csv.writer(ofile)
   csvwriter.writerow(losses[0])
   for row in losses[1:]:
@@ -252,19 +267,20 @@ with open(os.path.join(dst,mlp_id+'-losses.csv'),mode='w',newline='') as ofile:
     )
 
 # save model file
-torch.save(mlp.state_dict(), os.path.join(dst,mlp_id+'.pt'))
+torch.save(mlp.state_dict(), os.path.join(run_dir,f"{mlp_id}.pt"))
 
 torch.save({
   "t_mean": t_mean,
   "t_std": t_std,
   "v_mean": v_mean,
   "v_std": v_std
-}, os.path.join(dst, mlp_id + "-norm.pt"))
+}, os.path.join(run_dir, f"{mlp_id}-norm.pt"))
 
 t_end_total = time.perf_counter()
 total_time_s = t_end_total - t_start_total
 
-runtime_csv = os.path.join(dst, mlp_id + '-runtime.csv')
+runtime_csv = os.path.join(run_dir, f"{mlp_id}-runtime.csv")
+
 mse_norm = losses[-1][2] 
 mse_volts2 = mse_norm * float(v_std.item() ** 2) 
 rmse_volts = (mse_norm ** 0.5) * float(v_std.item())
