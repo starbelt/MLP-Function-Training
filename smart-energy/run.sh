@@ -17,9 +17,16 @@ SPLIT="$SCRIPT_DIR/05-split-data/"
 source "$SCRIPT_DIR/p3-env/bin/activate"
 
 # ---- optional training pipeline (as you had it) ----
-rm -rf "$SCRIPT_DIR/03-data/"*
-rm -f  "$SCRIPT_DIR/02-gen-data/data-cfg.json"
-python3 "$SCRIPT_DIR/02-gen-data/gen_data.py" "$SCRIPT_DIR/02-gen-data/test.csv" "$SCRIPT_DIR/03-data"
+read -p "Generate Data? Enter your choice (y/n): " choice
+if [ "$choice" = "y" ]; then
+    echo "Generating Data..."
+    rm -rf "$SCRIPT_DIR/03-data/"*
+    rm -f  "$SCRIPT_DIR/02-gen-data/data-cfg.json"
+    python3 "$SCRIPT_DIR/02-gen-data/gen_data.py" "$SCRIPT_DIR/02-gen-data/test.csv" "$SCRIPT_DIR/03-data"
+else
+    echo "Skipping Data Generation."
+fi
+
 
 rm -rf "$SCRIPT_DIR/05-split-data/trn"* "$SCRIPT_DIR/05-split-data/tst"* "$SCRIPT_DIR/05-split-data/val"*
 python3 "$SCRIPT_DIR/05-split-data/split_data.py" "$SCRIPT_DIR/03-data/" "$SCRIPT_DIR/05-split-data/"
