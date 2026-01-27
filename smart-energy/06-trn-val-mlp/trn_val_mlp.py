@@ -24,7 +24,7 @@ from datetime import datetime
 import time
 
 # "constants"
-EPOCHS = 50
+EPOCHS = 1
 NUM_CPUS = os.cpu_count()
 
 # helper functions

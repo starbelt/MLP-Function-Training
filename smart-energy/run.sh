@@ -49,7 +49,7 @@ for cfg in "$CFG_DIR"/mlp-*-*.json; do
   echo "-> Training config: $cfg"
   python3 "$SCRIPT_TRN" "$cfg" "$SPLIT" "$BASE_DIR_TRN"
 
-  ((count++))
+  ((++count))
   if (( count >= MAX_RUNS )); then
     echo "Reached limit of $MAX_RUNS configs. Stopping."
     break
