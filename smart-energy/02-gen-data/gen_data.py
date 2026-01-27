@@ -16,6 +16,7 @@ import numpy as np # numpy
 import os          # path.join
 import sys         # argv
 import csv         # CSV reader
+from tqdm import tqdm
 
 # "constants"
 SA = 0 # index for surface area
@@ -159,17 +160,17 @@ for k in meta:
 
 max_dur_s = max(meta["dur_s"])
 max_points = int(max_dur_s/dt_s_avg)
-print(max_points)
+#print(max_points)
 
 # Ensures the same number of points per data set
 for i in range(len(meta["dt_s"])):
     meta["dt_s"][i] = meta["dur_s"][i]/max_points
-    print(meta["dur_s"][i]/meta["dt_s"][i])
+    #print(meta["dur_s"][i]/meta["dt_s"][i])
 
 # for each wave, write out a dataset 
 id_to_cfg = {}
 cap_id = 0
-for cap_id in range(n):
+for cap_id in tqdm(range(n), desc="Generating Data"):
   cap_id_str = str(cap_id).zfill(pad)
   super_cap = [
       data["sa_m2"][cap_id],   # SA
