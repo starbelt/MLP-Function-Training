@@ -57,8 +57,6 @@ for cfg in "$CFG_DIR"/mlp-*-*.json; do
 done
 
 
-# ---- testing loop (NEW, matches your required call) ----
-# ---- testing loop (FIXED) ----
 # ---- testing loop (CSV files all go directly into 08-tst-mlp) ----
 mkdir -p "$BASE_DIR_TST"
 
