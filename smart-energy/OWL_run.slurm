@@ -26,6 +26,7 @@
 module reset
 
 # Set up virtual environment
+source "$(conda info --base)/etc/profile.d/conda.sh"
 source activate smart-energy
 
 # Run the python script
@@ -34,3 +35,4 @@ cd 02-gen-data
 python ./gen_data.py ./test.csv ../03-data/
 
 # Deactivate virtual environment
+conda deactivate
