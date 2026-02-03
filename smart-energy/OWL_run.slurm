@@ -25,9 +25,15 @@
 # Resets module system (recommended)
 module reset
 
+
 # Set up virtual environment
+module load Miniforge3/25.11.0-1
 source "$(conda info --base)/etc/profile.d/conda.sh"
 source activate smart-energy
+
+echo "ENV=$CONDA_DEFAULT_ENV"
+echo "PY=$(which python)"
+python -c "import numpy; print('numpy ok')"
 
 # Run the python script
 cd "$SLURM_SUBMIT_DIR"
