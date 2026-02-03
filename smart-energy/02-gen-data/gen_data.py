@@ -150,8 +150,8 @@ with open(json_file, "w") as f:
 
 
 # determine zfill padding
-#n = len(data["sa_m2"])  # number of rows / cases
-n = 2  # number of rows / cases
+n = len(data["sa_m2"])  # number of rows / cases
+#n = 2  # number of rows / cases
 dt_s_avg = 0.1 #mean time step to secure the same number of points.
 pad = max(1, math.floor(math.log10(n)) + 1)
 
