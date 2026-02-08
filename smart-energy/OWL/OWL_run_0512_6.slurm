@@ -28,7 +28,7 @@ module reset
 
 # Set up virtual environment
 module load Miniforge3/25.11.0-1
-source "$(conda info --base)/etc/profile.d/conda.sh"
+eval "$(/apps/common/software/Miniforge3/25.11.0-1/bin/conda shell.bash hook)"
 source activate smart-energy
 
 echo "ENV=$CONDA_DEFAULT_ENV"
