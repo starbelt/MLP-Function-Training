@@ -52,7 +52,7 @@ def analyze_folder(cfg_dir, csv_out):
 
 if __name__ == "__main__":
     analyze_folder(
-        cfg_dir="mlp-cfg",
+        cfg_dir="mlp-1024-cfg",
         csv_out="mlp_ops_summary.csv"
     )
 

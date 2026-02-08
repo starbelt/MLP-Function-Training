@@ -101,6 +101,7 @@ cfg = '' # a JSON specification of an MLP
 pth = '' # a PyTorch model weights file
 src = '' # a directory containing the tst/ directory
 dst = '' # a directory to write the performance statistics
+nomr_pth = '' # a PyTorch file containing the normalization parameters
 
 # parse script arguments
 if len(sys.argv)==6:
@@ -146,7 +147,7 @@ total_predictions = 0
 
 # load test dataset and construct test data loader
 tst_dataset = MSDataset(src_dir=os.path.join(src,'tst'))
-worker_count = min(NUM_CPUS,16) # no need for more than 16 data loader workers
+worker_count = NUM_CPUS # no need for more than 16 data loader workers (changed from min(NUM_CPUS, 16) to NUM_CPUS)
 tst_loader = DataLoader(\
  dataset=tst_dataset, batch_size=1024, shuffle=False, num_workers=worker_count\
 )

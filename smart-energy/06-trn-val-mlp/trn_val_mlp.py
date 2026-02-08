@@ -216,7 +216,7 @@ val_dataset = MSDataset(src_dir=os.path.join(src,'val'),
                         v_mean=v_mean, v_std=v_std)
 
 # construct data loaders
-worker_count = min(NUM_CPUS,16) # no need for more than 16 data loader workers
+worker_count = NUM_CPUS # no need for more than 16 data loader workers
 trn_loader = DataLoader(\
  dataset=trn_dataset, batch_size=512, shuffle=True, num_workers=worker_count\
 )
