@@ -1,0 +1,10 @@
+\documentclass{article}
+\title{Data Point Generation Methodology}
+\author{Julian Drake}
+\date{\today}
+\begin{document}
+  \maketitle
+Each configuration contains the duration in seconds for two charge and discharge cycles. One issue is that the duration varies widely between the lowest and highest times. Multiplying both by the same time step generates a different number of points, meaning that there is a bias towards learning larger cycles. To counteract this issue, the time step of every configuration with a duration lower than the max duration time is altered to produce the same number of points for each training configuration. 
+
+First, the maximum duration time in the list of configurations is identified. An arbitrary training time step is selected. This generates a maximum number of points. Each configuration's timestep is then calculated, which is equal to the max number of points divided by the duration of the configuration. This results in all of the configs having roughly the same number of points. Notably, the accuracy of lower duration times and overall configuration accuracy increased after this change. The training time has also increased as a result of the large change in data points.
+\end{document}

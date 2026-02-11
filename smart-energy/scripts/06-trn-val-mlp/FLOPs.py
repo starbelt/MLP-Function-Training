@@ -9,7 +9,7 @@ def analyze_mlp_config(json_path):
 
     curr_in = cfg["in_features"]
     n_linear = 0
-    adds = muls = divs = 0
+    adds = muls = 0
 
     for layer in cfg["layers"]:
         if layer["class"] == "Linear":
@@ -28,7 +28,6 @@ def analyze_mlp_config(json_path):
         "n_linear_layers": n_linear,
         "adds": adds,
         "muls": muls,
-        "divs": divs,
     }
 
 
