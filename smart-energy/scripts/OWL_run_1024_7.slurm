@@ -40,7 +40,7 @@ NODE_IDX=1024
 
 # Run the python script
 cd "$SLURM_SUBMIT_DIR"
-cd ../02-gen-data
+cd 02-gen-data
 
 python ./gen_data.py \
     ./test.csv \
