@@ -4,7 +4,7 @@
 # Job Identification & Runtime         #
 ########################################
 #SBATCH --job-name=Smart_Energy_1024_4        # Job name
-#SBATCH --account=personal                  # Account name
+#SBATCH --account=juliand                  # Account name
 #SBATCH --time=30:00:00                     # Time limit (HH:MM:SS)
 #SBATCH --partition=normal_q                # Partition name
 #SBATCH --output=job_output_%j.out          # Standard output file (%j = job ID)
