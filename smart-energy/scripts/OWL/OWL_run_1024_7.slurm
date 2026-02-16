@@ -35,12 +35,12 @@ echo "ENV=$CONDA_DEFAULT_ENV"
 echo "PY=$(which python)"
 python -c "import numpy; print('numpy ok')"
 
-IDX = 7
-NODE_IDX = 1024
+IDX=7
+NODE_IDX=1024
 
 # Run the python script
 cd "$SLURM_SUBMIT_DIR"
-cd 02-gen-data
+cd ../02-gen-data
 
 python ./gen_data.py \
     ./test.csv \
@@ -62,7 +62,7 @@ cd ../06-trn-val-mlp/
 python trn_val_mlp.py \
     ./mlp-${NODE_IDX}-cfg/mlp-${NODE_IDX}-${IDX}.json \
     ../05-split-data/ \
-    ./mlp-${NODE_IDX}-results/mlp-${NODE_IDX}-${IDX}/
+    ./mlp-${NODE_IDX}-results/mlp-${NODE_IDX}-${IDX}/ 
 
 echo "Trained Model!"
 
@@ -71,19 +71,19 @@ cd ../07-viz-results/
 
 python viz_trn_val.py \
     ../06-trn-val-mlp/mlp-${NODE_IDX}-results/mlp-${NODE_IDX}-${IDX}/mlp-${NODE_IDX}-${IDX}-losses.csv \
-    ../06-trn-val-mlp/mlp-${NODE_IDX}-results/mlp-${NODE_IDX}-${IDX}/
+    ../06-trn-val-mlp/mlp-${NODE_IDX}-results/mlp-${NODE_IDX}-${IDX}/ 
 
 echo "Vizualized Loss!"
 
 # Run Test
 cd ../08-tst-mlp/
 
-python tst_mlp.py \ 
+python tst_mlp.py \
     ../06-trn-val-mlp/mlp-${NODE_IDX}-cfg/mlp-${NODE_IDX}-${IDX}.json \
     ../06-trn-val-mlp/mlp-${NODE_IDX}-results/mlp-${NODE_IDX}-${IDX}/mlp-${NODE_IDX}-${IDX}.pt \
     ../06-trn-val-mlp/mlp-${NODE_IDX}-results/mlp-${NODE_IDX}-${IDX}/mlp-${NODE_IDX}-${IDX}-norm.pt \
     ../05-split-data/ \
-    ./mlp-${NODE_IDX}-results/
+    ./mlp-${NODE_IDX}-results/ 
 
 echo "Deployed Model!"
 
